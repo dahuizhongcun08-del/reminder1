@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>リマインダーアプリ</title>
+  <style>
+    :root {
+      --bg-color: #f4f6f9;
+      --card-bg: #ffffff;
+      --primary: #4f46e5;
+      --primary-hover: #4338ca;
+      --danger-bg: #fee2e2;
+      --danger-border: #ef4444;
+      --danger-text: #b91c1c;
+      --border-color: #e5e7eb;
+      --text-main: #1f2937;
+      --text-sub: #6b7280;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    }
+
+    body {
+      background-color: var(--bg-color);
+      color: var(--text-main);
+      padding: 24px 16px;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    h1 {
+      text-align: center;
+      margin-bottom: 24px;
+      font-size: 1.8rem;
+    }
+
+    /* フォーム領域 */
+    .form-container {
+      background: var(--card-bg);
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+      margin-bottom: 24px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      align-items: flex-end;
+    }
+
+    .form-group {
+      flex: 1;
+      min-width: 200px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .form-group label {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--text-sub);
+    }
+
+    .form-group input {
+      padding: 10px 12px;
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      font-size: 0.95rem;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    .form-group input:focus {
+      border-color: var(--primary);
+    }
+
+    button.btn-add {
+      background: var(--primary);
+      color: white;
+      border: none;
+      padding: 10px 24px;
+      border-radius: 8px;
+      font-weight: 600;
+      font-size: 0.95rem;
+      cursor: pointer;
+      height: 42px;
+      transition: background 0.2s;
+    }
+
+    button.btn-add:hover {
+      background: var(--primary-hover);
+    }
+
+    /* メイン表示エリア（2カラム横並び） */
+    .columns-container {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+
+    @media (max-width: 768px) {
+      .columns-container {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .column-panel {
+      background: var(--card-bg);
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+      min-height: 400px;
+    }
+
+    .column-title {
+      font-size: 1.15rem;
+      font-weight: 700;
+      padding-bottom: 12px;
+      margin-bottom: 16px;
+      border-bottom: 2px solid var(--border-color);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    /* タスクカード */
+    .task-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 16px;
+      border-radius: 8px;
+      border: 1px solid var(--border-color);
+      margin-bottom: 10px;
+      background: #fafafa;
+      transition: all 0.2s;
+    }
+
+    /* 残り1日以下（本日・明日・期限切れ）は赤くなる */
+    .task-item.urgent {
+      background-color: var(--danger-bg);
+      border-color: var(--danger-border);
+      color: var(--danger-text);
+      animation: pulse 1.5s infinite alternate ease-in-out;
+    }
+
+    @keyframes pulse {
+      from { box-shadow: 0 0 0px rgba(239, 68, 68, 0.2); }
+      to { box-shadow: 0 0 8px rgba(239, 68, 68, 0.5); }
+    }
+
+    .task-content {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .task-title {
+      font-weight: 600;
+      font-size: 0.95rem;
+    }
+
+    .task-date-info {
+      font-size: 0.8rem;
+      color: var(--text-sub);
+    }
+
+    .task-item.urgent .task-date-info {
+      color: var(--danger-text);
+      font-weight: 600;
+    }
+
+    .btn-delete {
+      background: transparent;
+      border: 1px solid #d1d5db;
+      color: #6b7280;
+      padding: 4px 8px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 0.75rem;
+      transition: all 0.2s;
+    }
+
+    .btn-delete:hover {
+      background: #fee2e2;
+      border-color: #ef4444;
+      color: #b91c1c;
+    }
+
+    /* 日付グループのスタイル */
+    .group-block {
+      margin-bottom: 16px;
+    }
+
+    .group-header {
+      font-size: 0.9rem;
+      font-weight: 700;
+      color: var(--text-sub);
+      margin-bottom: 6px;
+      padding-left: 4px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .empty-state {
+      text-align: center;
+      color: var(--text-sub);
+      padding: 40px 0;
+      font-size: 0.9rem;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <h1>🗓️ リマインダー</h1>
+
+    <!-- 入力フォーム -->
+    <div class="form-container">
+      <div class="form-group">
+        <label for="taskName">要件（タスク名）</label>
+        <input type="text" id="taskName" placeholder="例: 企画書の提出" required>
+      </div>
+      <div class="form-group">
+        <label for="dueDate">締め切り日</label>
+        <input type="date" id="dueDate" required>
+      </div>
+      <button class="btn-add" id="btnAdd">追加する</button>
+    </div>
+
+    <!-- 2カラム表示エリア -->
+    <div class="columns-container">
+      <!-- 左カラム: 期限別（日付ごと）表示 -->
+      <div class="column-panel">
+        <div class="column-title">
+          <span>📅 期限ごとに表示</span>
+        </div>
+        <div id="groupedListContainer"></div>
+      </div>
+
+      <!-- 右カラム: 期限が近い順に表示 -->
+      <div class="column-panel">
+        <div class="column-title">
+          <span>⏳ 期限が近い順</span>
+        </div>
+        <div id="sortedListContainer"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // LocalStorageからタスクを取得（リロードしても消えません）
+    let tasks = JSON.parse(localStorage.getItem('my_reminders')) || [];
+
+    const taskNameInput = document.getElementById('taskName');
+    const dueDateInput = document.getElementById('dueDate');
+    const btnAdd = document.getElementById('btnAdd');
+    const groupedListContainer = document.getElementById('groupedListContainer');
+    const sortedListContainer = document.getElementById('sortedListContainer');
+
+    // 残り日数を計算する関数
+    function getRemainingDays(dueDateStr) {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      // YYYY-MM-DDをパース
+      const parts = dueDateStr.split('-');
+      const due = new Date(parts[0], parts[1] - 1, parts[2]);
+
+      const diffMs = due.getTime() - today.getTime();
+      return Math.round(diffMs / (1000 * 60 * 60 * 24));
+    }
+
+    // 残り日数に応じたラベルテキスト
+    function getDaysBadge(days) {
+      if (days < 0) return `【期限切れ (${Math.abs(days)}日超過)】`;
+      if (days === 0) return '【本日締切！】';
+      if (days === 1) return '【残り1日！】';
+      return `残り ${days}日`;
+    }
+
+    // タスクのHTML要素を作成
+    function createTaskElement(task) {
+      const remainingDays = getRemainingDays(task.dueDate);
+      const isUrgent = remainingDays <= 1; // 1日以内または超過で赤くなる
+
+      const item = document.createElement('div');
+      item.className = `task-item ${isUrgent ? 'urgent' : ''}`;
+
+      item.innerHTML = `
+        <div class="task-content">
+          <span class="task-title">${escapeHtml(task.title)}</span>
+          <span class="task-date-info">
+            期日: ${task.dueDate} ・ ${getDaysBadge(remainingDays)}
+          </span>
+        </div>
+        <button class="btn-delete" onclick="deleteTask('${task.id}')">削除</button>
+      `;
+      return item;
+    }
+
+    // 画面の再描画
+    function render() {
+      localStorage.setItem('my_reminders', JSON.stringify(tasks));
+
+      groupedListContainer.innerHTML = '';
+      sortedListContainer.innerHTML = '';
+
+      if (tasks.length === 0) {
+        groupedListContainer.innerHTML = '<div class="empty-state">登録された要件はありません</div>';
+        sortedListContainer.innerHTML = '<div class="empty-state">登録された要件はありません</div>';
+        return;
+      }
+
+      // --- 1. 右側：期限が近い順表示 ---
+      const sortedTasks = [...tasks].sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate));
+      sortedTasks.forEach(task => {
+        sortedListContainer.appendChild(createTaskElement(task));
+      });
+
+      // --- 2. 左側：期限ごとのグループ表示 ---
+      // 日付ごとにグループ化
+      const groups = {};
+      sortedTasks.forEach(task => {
+        if (!groups[task.dueDate]) groups[task.dueDate] = [];
+        groups[task.dueDate].push(task);
+      });
+
+      for (const [date, taskList] of Object.entries(groups)) {
+        const remaining = getRemainingDays(date);
+        const groupBlock = document.createElement('div');
+        groupBlock.className = 'group-block';
+
+        const groupHeader = document.createElement('div');
+        groupHeader.className = 'group-header';
+        groupHeader.innerHTML = `🗓️ ${date} <span style="font-size: 0.8rem; color:${remaining <= 1 ? '#ef4444' : '#6b7280'}">(${getDaysBadge(remaining)})</span>`;
+        
+        groupBlock.appendChild(groupHeader);
+        taskList.forEach(task => {
+          groupBlock.appendChild(createTaskElement(task));
+        });
+
+        groupedListContainer.appendChild(groupBlock);
+      }
+    }
+
+    // タスク追加
+    btnAdd.addEventListener('click', () => {
+      const title = taskNameInput.value.trim();
+      const dueDate = dueDateInput.value;
+
+      if (!title || !dueDate) {
+        alert('要件と締め切り日を入力してください。');
+        return;
+      }
+
+      tasks.push({
+        id: Date.now().toString(),
+        title: title,
+        dueDate: dueDate
+      });
+
+      taskNameInput.value = '';
+      dueDateInput.value = '';
+      render();
+    });
+
+    // タスク削除
+    window.deleteTask = function(id) {
+      tasks = tasks.filter(t => t.id !== id);
+      render();
+    };
+
+    // XSS対策エスケープ
+    function escapeHtml(str) {
+      return str
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+
+    // 初期表示
+    render();
+  </script>
+</body>
+</html>
